@@ -21,6 +21,14 @@ async function run() {
     const assignmentCollections = client
       .db("assignmentsDB")
       .collection("assignments");
+
+    //   jwt -> json web token
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      res.send(user);
+    });
+    //   create assignment
     app.post("/create-assignment", async (req, res) => {
       const assignment = req.body;
       console.log(assignment);
