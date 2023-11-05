@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 var jwt = require("jsonwebtoken");
 require("dotenv").config();
 const cors = require("cors");
@@ -27,6 +27,9 @@ async function run() {
     const assignmentCollection = client
       .db("assignmentsDB")
       .collection("assignments");
+    const submittedAssignmentColl = client
+      .db("assignmentsDB")
+      .collection("submittedAssignments");
 
     //   jwt -> json web token related
     app.post("/jwt", async (req, res) => {
@@ -53,11 +56,11 @@ async function run() {
     // assignment related
     app.get("/assignments", async (req, res) => {
       const query = {};
-      const level = req.query.level;
-      if (level) {
-        query.level = level;
+      const difficultLevel = req.query.difficultLevel;
+      if (difficultLevel) {
+        query.difficultLevel = difficultLevel;
       }
-      console.log(query);
+
       const cursor = assignmentCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -67,7 +70,17 @@ async function run() {
       const result = await assignmentCollection.insertOne(assignment);
       res.send(result);
     });
-
+    app.get("/assignment/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await assignmentCollection.findOne(query);
+      res.send(result);
+    });
+    app.post("/submit-assignment", async (req, res) => {
+      const assignment = req.body.assignment;
+      console.log(assignment);
+      res.send([]);
+    });
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
