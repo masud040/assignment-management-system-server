@@ -76,10 +76,15 @@ async function run() {
       const result = await assignmentCollection.findOne(query);
       res.send(result);
     });
+    app.delete("/assignment", async (req, res) => {
+      const id = req.body.id;
+      const email = req.query.email;
+      console.log(id, email);
+    });
     app.post("/submit-assignment", async (req, res) => {
-      const assignment = req.body.assignment;
-      console.log(assignment);
-      res.send([]);
+      const assignment = req.body;
+      const result = await submittedAssignmentColl.insertOne(assignment);
+      res.send(result);
     });
     await client.db("admin").command({ ping: 1 });
     console.log(
