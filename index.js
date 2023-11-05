@@ -72,14 +72,50 @@ async function run() {
     });
     app.get("/assignment/:id", async (req, res) => {
       const id = req.params.id;
+      console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await assignmentCollection.findOne(query);
       res.send(result);
     });
+    app.patch("/assignment", async (req, res) => {
+      const id = req.query.id;
+      const assignment = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = {};
+      const cursor = await assignmentCollection.findOne(filter);
+      if (cursor.email === assignment.email) {
+        const update = {
+          $set: {
+            email: assignment.email,
+            title: assignment.title,
+            marks: assignment.marks,
+            thumbnail: assignment.thumbnail,
+            date: assignment.date,
+            description: assignment.description,
+            difficultLevel: assignment.difficultLevel,
+          },
+        };
+        const result = await assignmentCollection.updateOne(
+          filter,
+          update,
+          options
+        );
+        res.send(result);
+      } else {
+        res.send({ message: "you can't update this assignment" });
+      }
+    });
     app.delete("/assignment", async (req, res) => {
-      const id = req.body.id;
+      const id = req.query.id;
       const email = req.query.email;
-      console.log(id, email);
+      const query = { _id: new ObjectId(id) };
+      const cursor = await assignmentCollection.findOne(query);
+      if (cursor.email === email) {
+        const result = await assignmentCollection.deleteOne(query);
+        res.send(result);
+      } else {
+        res.send({ message: "Not Allow to delete this assignment" });
+      }
     });
     app.post("/submit-assignment", async (req, res) => {
       const assignment = req.body;
