@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 var jwt = require("jsonwebtoken");
 require("dotenv").config();
 const cors = require("cors");
+var cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 5000;
 app.use(express.json());
@@ -12,6 +13,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(cookieParser());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yngtotr.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
   serverApi: {
@@ -20,6 +22,23 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies.token;
+  console.log(token);
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+
+    next();
+  });
+};
+
 async function run() {
   try {
     await client.connect();
@@ -27,6 +46,10 @@ async function run() {
     const assignmentCollection = client
       .db("assignmentsDB")
       .collection("assignments");
+    const features = client.db("assignmentsDB").collection("features");
+    const faqCollection = client
+      .db("assignmentsDB")
+      .collection("frequently-asked-question");
     const submittedAssignmentColl = client
       .db("assignmentsDB")
       .collection("submittedAssignments");
@@ -53,26 +76,50 @@ async function run() {
         })
         .send({ success: true });
     });
+    app.get("/features", async (req, res) => {
+      const result = await features.find().toArray();
+      res.send(result);
+    });
+    app.get("/faq", async (req, res) => {
+      const result = await faqCollection.find().toArray();
+      res.send(result);
+    });
     // assignment related
     app.get("/assignments", async (req, res) => {
       const query = {};
+
       const difficultLevel = req.query.difficultLevel;
+      const page = Number(req.query.page);
+      const size = Number(req.query.size);
       if (difficultLevel) {
         query.difficultLevel = difficultLevel;
       }
 
-      const cursor = assignmentCollection.find(query);
+      const cursor = assignmentCollection
+        .find(query)
+        .skip(page * size)
+        .limit(size);
       const result = await cursor.toArray();
       res.send(result);
     });
-    app.post("/create-assignment", async (req, res) => {
+    app.get("/count", async (req, res) => {
+      const result = await assignmentCollection.estimatedDocumentCount();
+      res.send({ total: result });
+    });
+    app.post("/create-assignment", verifyToken, async (req, res) => {
+      if (req.user?.email !== req.query?.email) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
       const assignment = req.body.assignment;
       const result = await assignmentCollection.insertOne(assignment);
       res.send(result);
     });
-    app.get("/assignment/:id", async (req, res) => {
-      const id = req.params.id;
-      console.log(id);
+    app.get("/assignment", verifyToken, async (req, res) => {
+      if (req.user?.email !== req.query?.email) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
+      const id = req.query.id;
+
       const query = { _id: new ObjectId(id) };
       const result = await assignmentCollection.findOne(query);
       res.send(result);
@@ -120,16 +167,20 @@ async function run() {
     app.get("/submitted-assignments", async (req, res) => {
       const query = {};
       const status = req.query?.status;
+      const email = req.query?.email;
 
       if (status) {
         query.status = status;
+      }
+      if (email) {
+        query.email = email;
       }
 
       const cursor = submittedAssignmentColl.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
-    app.get("/submitted-assignment", async (req, res) => {
+    app.get("/submit-assignment", verifyToken, async (req, res) => {
       const id = req.query.id;
       const query = { _id: new ObjectId(id) };
       const result = await submittedAssignmentColl.findOne(query);
@@ -140,6 +191,27 @@ async function run() {
       const result = await submittedAssignmentColl.insertOne(assignment);
       res.send(result);
     });
+    app.patch("/submitted-assignment", async (req, res) => {
+      const id = req.query.id;
+      const assignment = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const update = {
+        $set: {
+          obtainMark: assignment.obtainMark,
+          feedback: assignment.feedback,
+          status: assignment.status,
+        },
+      };
+      const result = await submittedAssignmentColl.updateOne(
+        filter,
+        update,
+        options
+      );
+      console.log(id);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
