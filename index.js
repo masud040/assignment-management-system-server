@@ -25,7 +25,6 @@ const client = new MongoClient(uri, {
 
 const verifyToken = async (req, res, next) => {
   const token = req.cookies.token;
-  console.log(token);
   if (!token) {
     return res.status(401).send({ message: "Unauthorized access" });
   }
@@ -34,7 +33,6 @@ const verifyToken = async (req, res, next) => {
       return res.status(401).send({ message: "unauthorized access" });
     }
     req.user = decoded;
-
     next();
   });
 };
@@ -164,7 +162,10 @@ async function run() {
         res.send({ message: "Not Allow to delete this assignment" });
       }
     });
-    app.get("/submitted-assignments", async (req, res) => {
+    app.get("/submitted-assignments", verifyToken, async (req, res) => {
+      if (req.query?.email !== req.user?.email) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
       const query = {};
       const status = req.query?.status;
       const email = req.query?.email;
@@ -217,7 +218,6 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    //   await client.close();
   }
 }
 run().catch(console.dir);
