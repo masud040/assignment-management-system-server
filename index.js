@@ -117,6 +117,24 @@ async function run() {
         res.send({ message: "Not Allow to delete this assignment" });
       }
     });
+    app.get("/submitted-assignments", async (req, res) => {
+      const query = {};
+      const status = req.query?.status;
+
+      if (status) {
+        query.status = status;
+      }
+
+      const cursor = submittedAssignmentColl.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/submitted-assignment", async (req, res) => {
+      const id = req.query.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await submittedAssignmentColl.findOne(query);
+      res.send(result);
+    });
     app.post("/submit-assignment", async (req, res) => {
       const assignment = req.body;
       const result = await submittedAssignmentColl.insertOne(assignment);
