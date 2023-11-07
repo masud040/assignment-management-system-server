@@ -9,7 +9,9 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "https://6549368f8aef333804f980fe--fabulous-sunburst-130e1e.netlify.app",
+    ],
     credentials: true,
   })
 );
@@ -62,7 +64,7 @@ async function run() {
         .cookie("token", token, {
           httpOnly: true,
           secure: true,
-          sameSite: "none",
+          // sameSite: "None",
         })
         .send({ success: true });
     });
