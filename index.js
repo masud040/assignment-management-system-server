@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "https://6549368f8aef333804f980fe--fabulous-sunburst-130e1e.netlify.app",
+      "https://6549cc52277dfe4bde02773c--fabulous-sunburst-130e1e.netlify.app",
     ],
     credentials: true,
   })
@@ -64,7 +64,7 @@ async function run() {
         .cookie("token", token, {
           httpOnly: true,
           secure: true,
-          // sameSite: "None",
+          sameSite: "None",
         })
         .send({ success: true });
     });
@@ -73,8 +73,10 @@ async function run() {
       res
         .clearCookie("token", {
           maxAge: 0,
+          secure: process.env.NODE_ENV === "production" ? true : false,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
-        .send({ success: true });
+        .send({ status: true });
     });
     app.get("/features", async (req, res) => {
       const result = await features.find().toArray();
