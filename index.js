@@ -9,9 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(
   cors({
-    origin: [
-      "https://654bb545b8c6b57e6b81051a--delicate-tarsier-25d665.netlify.app",
-    ],
+    origin: ["https://654bc3c2440eb818bdbcefd7--sage-liger-a974d8.netlify.app"],
     credentials: true,
   })
 );
@@ -172,14 +170,23 @@ async function run() {
       }
       const query = {};
       const status = req.query?.status;
-      const email = req.query?.email;
 
       if (status) {
         query.status = status;
       }
-      if (email) {
-        query.email = email;
+
+      const cursor = submittedAssignmentColl.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/mySubmitted-assignments", verifyToken, async (req, res) => {
+      if (req.query?.email !== req.user?.email) {
+        return res.status(403).send({ message: "Forbidden" });
       }
+
+      const email = req.query?.email;
+
+      const query = { email: email };
 
       const cursor = submittedAssignmentColl.find(query);
       const result = await cursor.toArray();
