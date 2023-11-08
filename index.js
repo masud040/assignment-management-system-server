@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "https://6549cc52277dfe4bde02773c--fabulous-sunburst-130e1e.netlify.app",
+      "https://654bb545b8c6b57e6b81051a--delicate-tarsier-25d665.netlify.app",
     ],
     credentials: true,
   })
