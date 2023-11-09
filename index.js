@@ -9,7 +9,9 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["https://654bc3c2440eb818bdbcefd7--sage-liger-a974d8.netlify.app"],
+    origin: [
+      "https://654cbd4fe3b58a14bfe89522--inquisitive-gecko-d64cb0.netlify.app",
+    ],
     credentials: true,
   })
 );
